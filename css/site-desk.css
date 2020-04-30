@@ -1,0 +1,104 @@
+body.post-template-single-onepage-php .site-content-contain {
+    padding-top: 25px !important;
+}
+
+body.post-template-single-onepage-php div#page {
+    max-width: 1600px !important;
+    margin: auto;
+}
+
+@media only screen and (max-width: 1799px) {
+    article.post .content {
+        -ms-grid-columns: 300px auto 300px;
+        grid-template-columns: 300px auto 300px;
+        grid-column-gap: 0;
+    }
+}
+
+div.rtkadunit-wrapper {
+    text-align: center;
+}
+
+article.post {
+    padding-top: 15px !important;
+}
+
+article.post .wrapper-intro,
+article.post .wrapper-hero,
+article.post .wrapper-pair {
+    margin: 0 auto;
+    padding: 0;
+    max-width: 2000px;
+}
+
+article.post .wrapper-hero {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+article.post .wrapper-hero h1.entry-title {
+    text-align: center;
+}
+
+article.post .wrapper-hero .meta-items.single {
+    margin: 15px 38px;
+    text-align: center;
+}
+
+article.post .content {
+    contain: paint;
+    display: -ms-grid;
+    display: grid;
+    -ms-grid-columns: 300px auto 300px;
+    grid-template-columns: 300px auto 300px;
+    grid-column-gap: 0;
+}
+article.post .grid-container {
+    margin: auto;
+    -ms-grid-column-align: center;
+    justify-items: center;
+}
+
+article.post .content-sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 115px;
+}
+
+article.post .content-left .content-sticky,
+article.post .content-right .content-sticky {
+    align-content: center;
+    background-color: #FFFFFF;
+    display: -ms-grid;
+    display: grid;
+    justify-content: center;
+    height: 625px;
+    width: 300px;
+    overflow: hidden;
+}
+
+article.post div.content-middle {
+    padding: 0;
+    position: relative;
+}
+
+article.post div.hero-image-middle {
+    width: 100%;
+}
+
+article.post div.content-middle img {
+    margin: 0 auto;
+    display: block;
+}
+
+article.post section.break {
+    align-content: center;
+    background-color: #F5F5F5;
+    display: -ms-grid;
+    display: grid;
+    justify-content: center;
+    min-height: 282px;
+    overflow: hidden;
+    padding: 16px 0;
+    margin: 40px 0;
+}

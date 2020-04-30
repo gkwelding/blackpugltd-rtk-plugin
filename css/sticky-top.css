@@ -1,0 +1,17 @@
+div.bpltdRTKStickyContainer{
+    display: block;
+    position: fixed;
+    z-index: 99998;
+    height: 50px;
+    left: 0;
+    right: 0;
+    top: 50px;
+    background: rgba(255, 255, 255, 0.80);
+}
+
+div.bpltdRTKStickyTop {
+    display: block;
+    width: 320px;
+    height: 55px;
+    margin: 0 auto;
+}
