@@ -122,6 +122,7 @@ if (!class_exists('BPLTD_RTK_Integration')) {
                     if (!isset($settings['sources']) || empty($settings['sources'])) {
                         echo '<p class="bpltd-rtk-integration-no-sources">No sources set.</p>';
                     } else {
+                        $default = true;
                         foreach ($settings['sources'] as $sourceName => $source) {
                             $source['mobile-auction-code'] = (isset($source['mobile-auction-code'])) ? $source['mobile-auction-code'] : '';
                             $source['mobile-adunit-code'] = (isset($source['mobile-adunit-code'])) ? $source['mobile-adunit-code'] : '';
@@ -134,9 +135,11 @@ if (!class_exists('BPLTD_RTK_Integration')) {
 
                             $displaySourceName = $sourceName;
 
-                            if($sourceName == 'general') {
+                            if($default) {
                                 $displaySourceName .= ' (default)';
                             }
+
+                            $default = false;
 
                             echo '<fieldset class="bpltd-rtk-integration-option-fieldset bpltd-rtk-integration-option-fieldset-outer">
                                 <legend>' . $displaySourceName . '</legend>
