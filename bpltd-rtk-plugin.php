@@ -134,7 +134,7 @@ if (!class_exists('BPLTD_RTK_Integration')) {
 
                             $displaySourceName = $sourceName;
 
-                            if($sourceName == 'facebook') {
+                            if($sourceName == 'general') {
                                 $displaySourceName .= ' (default)';
                             }
 
