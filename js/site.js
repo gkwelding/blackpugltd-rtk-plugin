@@ -17,11 +17,12 @@ var jita_tg_params = {};
 })(window.location.search.substr(1).split('&'));
 
 jita_tg_params['page'] = 1;
-var bpltdRTKDeug = true;
+var bpltdRTKDeug = false;
 var bpltdLastShownId = '';
 var bpltdRTKStickyCounter = 0;
 var bpLtdStickyRefresh = false;
 var viewportHeight = window.innerHeight;
+// TODO: implement Wordpress settings for scrolling ads then uncomment this
 // var adScrollHeight = 0.90 * viewportHeight;
 var bpltdDistanceFromTop = (3 * viewportHeight);
 var bpltdAdBid = false;
@@ -30,6 +31,7 @@ var bpltdAdUnitsLoaded = {};
 var bpltdTopStickyFirstLoad = true;
 
 jQuery(function(){
+    // TODO: implement Wordpress settings for scrolling ads then uncomment this
     // jQuery('.rtkadunit-wrapper').each(function(){
     //     jQuery(this).css('height', adScrollHeight + 'px');
     // });
@@ -208,6 +210,7 @@ function bpltdInsertCachedBids()
 
     let bpltdDivMapping = {};
 
+    // TODO: this selects the next 3 ads to be loaded, obviously this is an issue that needs addressing - throw back from 80's kids customisation
     jQuery('.rtkadunit:not(.ad_loaded):lt(3)').each(function(){
         let $this = jQuery(this);
         let adUnitCode = $this.data('adUnitCode');

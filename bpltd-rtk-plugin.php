@@ -23,17 +23,7 @@ if (!class_exists('BPLTD_RTK_Integration')) {
     {
         private $settings;
         private $source;
-
-        // mobile markers
-        private $topLoaded = false;
-        private $middleLoaded = false;
-        private $bottomLoaded = false;
-
-        // desktop markers
-        private $desktopLoaded = false;
-
-        // legacy
-        private $mobileLoaded = false;
+        private $displayedAdCount = 0;
 
         public function __construct()
         {
@@ -49,69 +39,16 @@ if (!class_exists('BPLTD_RTK_Integration')) {
             add_shortcode('rtk_adunit_bottom', array($this, 'bpltd_rtk_adunit_bottom_shortcode'));
             add_shortcode('rtk_adunit_end', array($this, 'bpltd_rtk_adunit_end_shortcode'));
 
-            /**
-             * Ignore the <!--nextpage--> for content pagination.
-             *
-             * @see http://wordpress.stackexchange.com/a/183587/26350
-             */
-
-            add_action( 'the_post', function( $post )
-            {
-                if ( false !== strpos( $post->post_content, '<!--nextpage-->' ) )
-                {
-                    // Reset the global $pages:
-                    $GLOBALS['pages']     = [ $post->post_content ];
-                    // Reset the global $numpages:
-                    $GLOBALS['numpages']  = 0;
-                    // Reset the global $multipage:
-                    $GLOBALS['multipage'] = false;
-                }
-
-            }, 99 );
-
-            add_filter('the_content', function ($content) {
-                global $post;
-
-                $content = trim($content);
-
-                if(
-                    !wp_is_mobile() &&
-                    substr($content,-36) != '[rtk_adunit desktop_last="RTK_I7VB"]' &&
-                    substr($content,-16) != '[rtk_adunit_end]' &&
-                    $post &&
-                    get_post_type() == 'post' &&
-                    get_page_template_slug($post->ID) == 'single-onepage.php'
-                ) {
-                    $html = '</div>
-                        <section class="grid-item content-right">
-                            <div class="content-sticky">
-                                <div class="RTK_3luH rtkadunit"></div>
-                            </div>
-                        </section>
-                    </div>
-                    
-                    <section class="break automated">
-                        <div class="RTK_I7VB rtkadunit">&nbsp;</div>
-                    </section>';
-                    $content .= $html;
-                }
-
-                return $content;
-            });
-
             $this->source = (isset($_GET['utm_source'])) ? $_GET['utm_source'] : null;
 
             $settings = get_option('bpltd_rtk_integration_settings', []);
 
-            if ($this->source === null) {
-                $sources = array_reverse($settings['sources']);
-                $this->settings = array_pop($sources);
-            } else {
+            $sources = array_reverse($settings['sources']);
+            $this->settings = array_pop($sources);
+
+            if ($this->source !== null) {
                 if (array_key_exists($this->source, $settings['sources'])) {
                     $this->settings = $settings['sources'][$this->source];
-                } else {
-                    $sources = array_reverse($settings['sources']);
-                    $this->settings = array_pop($sources);
                 }
             }
         }
@@ -275,7 +212,6 @@ if (!class_exists('BPLTD_RTK_Integration')) {
             <script type="text/javascript">
                 jQuery('a.bpltd-rtk-integration-option-delete').on("click", function(event) {
                     event.preventDefault();
-
                     jQuery(this).parent().remove();
                 });
 
@@ -381,282 +317,42 @@ if (!class_exists('BPLTD_RTK_Integration')) {
 
         public function bpltd_rtk_add_script()
         {
-            if (wp_is_mobile() && $this->bpltd_check_can_load()) {
-                wp_enqueue_script('bpltd-rtk-plugin-js', BPLTD_RTK_JS_DIR . 'site-mob.js', array('jquery'), BPLTD_RTK_ASSET_VER);
-                wp_enqueue_style( 'bpltd-rtk-plugin-css', BPLTD_RTK_CSS_DIR . 'site-mob.css', array(), BPLTD_RTK_ASSET_VER, false);
-            }
-
-            if (!wp_is_mobile() && $this->bpltd_check_can_load()) {
-                wp_enqueue_script('bpltd-rtk-plugin-js', BPLTD_RTK_JS_DIR . 'site-desk.js', array('jquery'), BPLTD_RTK_ASSET_VER);
-                wp_enqueue_style( 'bpltd-rtk-plugin-css', BPLTD_RTK_CSS_DIR . 'site-desk.css', array(), BPLTD_RTK_ASSET_VER, false);
-            }
+            wp_enqueue_script('bpltd-rtk-plugin-js', BPLTD_RTK_JS_DIR . 'site.js', array('jquery'), BPLTD_RTK_ASSET_VER);
+            wp_enqueue_style( 'bpltd-rtk-plugin-css', BPLTD_RTK_CSS_DIR . 'site.css', array(), BPLTD_RTK_ASSET_VER, false);
         }
 
-        public function bpltd_rtk_adunit_top_shortcode()
+        public function bpltd_rtk_adunit_shortcode()
         {
             if (wp_is_mobile() && $this->bpltd_check_can_load()) {
                 $adUnits = $this->getAdUnitsAsArray($this->settings['mobile-adunit-code']);
+                $totalAdUnits = count($adUnits);
 
-                if ($this->topLoaded) {
-                    $adUnitId = $adUnits[0].'_'.uniqid();
-                } else {
-                    $adUnitId = $adUnits[0];
-                }
-
-                $this->topLoaded = true;
+                $adUnitId = $adUnits[$this->displayedAdCount].'_'.uniqid();
 
                 $html = '<div class="rtkadunit-wrapper mobile">';
-	            $html .= '<div class="rtkadunit-wrapper-sticky">';
+                // TODO: implement Wordpress settings for scrolling ads then uncomment this
+	            //$html .= '<div class="rtkadunit-wrapper-sticky">';
                 $html .= '<div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>';
                 $html .= '<div id="'.$adUnitId.'" class="'.$adUnits[0].' rtkadunit" >&nbsp;</div>';
-	            $html .= '</div>';
+                $html .= '<div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>';
+                // TODO: implement Wordpress settings for scrolling ads then uncomment this
+	            //$html .= '</div>';
                 $html .= '</div>';
-                return $html;
-            }
-        }
 
-        public function bpltd_rtk_adunit_middle_shortcode()
-        {
-            if ($this->bpltd_check_can_load()) {
-                if (wp_is_mobile()) {
-                    $adUnits = $this->getAdUnitsAsArray($this->settings['mobile-adunit-code']);
-
-                    if ($this->middleLoaded) {
-                        $adUnitId = $adUnits[1].'_'.uniqid();
-                    } else {
-                        $adUnitId = $adUnits[1];
-                    }
-
-                    $this->middleLoaded = true;
-
-                    $html = '<div class="rtkadunit-wrapper mobile">';
-	                $html .= '<div class="rtkadunit-wrapper-sticky">';
-                    $html .= '<div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>';
-                    $html .= '<div id="'.$adUnitId.'" class="' . $adUnits[1] . ' rtkadunit" >&nbsp;</div>';
-                    $html .= '</div>';
-                    $html .= '</div>';
+                if (($this->displayedAdCount+1) === $totalAdUnits) {
+                    $this->displayedAdCount = 0;
                 } else {
-                    $adUnits = $this->getAdUnitsAsArray($this->settings['desktop-adunit-code']);
-
-                    if ($this->middleLoaded) {
-                        $adUnitId = $adUnits[3].'_'.uniqid();
-                    } else {
-                        $adUnitId = $adUnits[3];
-                    }
-
-                    $this->middleLoaded = true;
-
-                    $html = '<div class="rtkadunit-wrapper desktop">';
-                    $html .= '<div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>';
-                    $html .= '<div id="'.$adUnitId.'" class="' . $adUnits[3] . ' rtkadunit banner" >&nbsp;</div>';
-                    $html .= '</div>';
-                }
-                return $html;
-            }
-        }
-
-        public function bpltd_rtk_adunit_bottom_shortcode()
-        {
-            if ($this->bpltd_check_can_load()) {
-                if (wp_is_mobile()) {
-                    $adUnits = $this->getAdUnitsAsArray($this->settings['mobile-adunit-code']);
-
-                    if ($this->bottomLoaded) {
-                        $adUnitId = $adUnits[2].'_'.uniqid();
-                    } else {
-                        $adUnitId = $adUnits[2];
-                    }
-
-                    $this->bottomLoaded = true;
-
-                    $html = '<div class="rtkadunit-wrapper mobile">';
-	                $html .= '<div class="rtkadunit-wrapper-sticky">';
-                    $html .= '<div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>';
-                    $html .= '<div id="'.$adUnitId.'" class="' . $adUnits[2] . ' rtkadunit" >&nbsp;</div>';
-                    $html .= '</div>';
-                    $html .= '</div>';
-                } else {
-                    $adUnits = $this->getAdUnitsAsArray($this->settings['desktop-adunit-code']);
-
-                    if ($this->desktopLoaded) {
-                        $adUnitIdLeft = $adUnits[1].'_'.uniqid();
-                        $adUnitIdRight = $adUnits[0].'_'.uniqid();
-                        $adUnitIdMiddle = $adUnits[2].'_'.uniqid();
-                    } else {
-                        $adUnitIdLeft = $adUnits[1];
-                        $adUnitIdRight = $adUnits[0];
-                        $adUnitIdMiddle = $adUnits[2];
-                    }
-
-                    $this->desktopLoaded = true;
-
-                    $html = '</div>
-
-                        <section class="grid-item content-right">
-                            <div class="content-sticky">
-                                <div id="'.$adUnitIdRight.'" class="' . $adUnits[0] . ' rtkadunit"></div>
-                            </div>
-                        </section>
-                    </div>
-                    
-                    <section class="break">
-                        <div id="'.$adUnitIdMiddle.'" class="' . $adUnits[2] . ' rtkadunit">&nbsp;</div>
-                    </section>
-                    
-                    <div class="grid-container content">
-                        <section class="grid-item content-left">
-                            <div class="content-sticky">
-                                <div id="'.$adUnitIdLeft.'" class="' . $adUnits[1] . ' rtkadunit"></div>
-                            </div>
-                        </section>
-                        
-                        <div class="grid-item content-middle">';
+                    $this->displayedAdCount++;
                 }
 
                 return $html;
             }
-        }
-
-        public function bpltd_rtk_adunit_end_shortcode()
-        {
-            if ($this->bpltd_check_can_load()) {
-                if (!wp_is_mobile()) {
-                    $adUnits = $this->getAdUnitsAsArray($this->settings['desktop-adunit-code']);
-
-                    $adUnitIdRight = $adUnits[0].'_'.uniqid();
-                    $adUnitIdEnd = $adUnits[2].'_'.uniqid();
-
-                    $html = '</div>
-                        <section class="grid-item content-right">
-                            <div class="content-sticky">
-                                <div id="'.$adUnitIdRight.'" class="' . $adUnits[0] . ' rtkadunit"></div>
-                            </div>
-                        </section>
-                    </div>
-                    
-                    <section class="break end">
-                        <div id="'.$adUnitIdEnd.'" class="' . $adUnits[2] . ' rtkadunit">&nbsp;</div>
-                    </section>';
-
-                    return $html;
-                }
-            }
-        }
-
-        public function bpltd_rtk_adunit_shortcode($attributes)
-        {
-            $arrAtts = shortcode_atts(array(
-                'desktop' => '',
-                'mobile' => '',
-                'desktop_banner' => '',
-                'desktop_last' => ''
-            ), $attributes);
-
-            if (wp_is_mobile() && $this->bpltd_check_can_load()) {
-                if (!empty($arrAtts['mobile'])) {
-                    if ($this->mobileLoaded) {
-                        $adUnitId = $arrAtts['mobile'].'_'.uniqid();
-                    } else {
-                        $adUnitId = $arrAtts['mobile'];
-                    }
-
-                    $this->mobileLoaded = true;
-
-                    return '<div class="rtkadunit-wrapper mobile">
-                                <div class="rtkadunit-wrapper-sticky">
-                                    <div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div>
-                                    <div id="'.$adUnitId.'" class="' . $arrAtts['mobile'] . ' rtkadunit" >&nbsp;</div>
-                                </div>
-                            </div>';
-                }
-            } else if (!wp_is_mobile() && $this->bpltd_check_can_load()) {
-                if (!empty($arrAtts['desktop'])) {
-                    if ($this->desktopLoaded) {
-                        $adUnitIdLeft = 'RTK_3DBG_'.uniqid();
-                        $adUnitIdRight = 'RTK_3luH_'.uniqid();
-                        $adUnitIdMiddle = $arrAtts['desktop'].'_'.uniqid();
-                    } else {
-                        $adUnitIdLeft = 'RTK_3DBG';
-                        $adUnitIdRight = 'RTK_3luH';
-                        $adUnitIdMiddle = $arrAtts['desktop'];
-                    }
-
-                    $this->desktopLoaded = true;
-
-                    return '</div>
-                        <section class="grid-item content-right">
-                            <div class="content-sticky">
-                                <div id="'.$adUnitIdRight.'" class="RTK_3luH rtkadunit"></div>
-                            </div>
-                        </section>
-                    </div>
-                    
-                    <section class="break">
-                        <div id="'.$adUnitIdMiddle.'" class="' . $arrAtts['desktop'] . ' rtkadunit">&nbsp;</div>
-                    </section>
-                    
-                    <div class="grid-container content">
-                        <section class="grid-item content-left">
-                            <div class="content-sticky">
-                                <div id="'.$adUnitIdLeft.'" class="RTK_3DBG rtkadunit"></div>
-                            </div>
-                        </section>
-                        
-                        <div class="grid-item content-middle">';
-                } else if (!empty($arrAtts['desktop_banner'])) {
-                    return '<div class="rtkadunit-wrapper desktop"><div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div><div class="' . $arrAtts['desktop_banner'] . ' rtkadunit banner" >&nbsp;</div></div>';
-                } else if (!empty($arrAtts['desktop_last'])) {
-                    return '</div>
-                        <section class="grid-item content-right">
-                            <div class="content-sticky">
-                                <div class="RTK_3luH rtkadunit"></div>
-                            </div>
-                        </section>
-                    </div>
-                    
-                    <section class="break">
-                        <div class="' . $arrAtts['desktop_last'] . ' rtkadunit">&nbsp;</div>
-                    </section>';
-                } else if (!empty($arrAtts['mobile'])) {
-                    switch ($arrAtts['mobile']) {
-                        case 'RTK_wCZW':
-                            return '<div class="rtkadunit-wrapper desktop"><div class="ad-separator-wrapper"><span class="ad-separator">ADVERTISEMENT</span></div><div class="RTK_L9Y2 rtkadunit banner" >&nbsp;</div></div>';
-                            break;
-                        case 'RTK_z9hm':
-                            return '</div>
-                                <section class="grid-item content-right">
-                                    <div class="content-sticky">
-                                        <div class="RTK_3luH rtkadunit"></div>
-                                    </div>
-                                </section>
-                            </div>
-                            
-                            <section class="break">
-                                <div class="RTK_I7VB rtkadunit">&nbsp;</div>
-                            </section>
-                            
-                            <div class="grid-container content">
-                                <section class="grid-item content-left">
-                                    <div class="content-sticky">
-                                        <div class="RTK_3DBG rtkadunit"></div>
-                                    </div>
-                                </section>
-                                
-                                <div class="grid-item content-middle">';
-                            break;
-                    }
-                }
-            }
-            return '';
         }
 
         private function bpltd_check_can_load() {
             global  $post;
 
-            return $post &&
-                get_post_type() == 'post' &&
-                (get_page_template_slug($post->ID) == 'single-onepage.php' || get_page_template_slug($post->ID) == 'single-playbuzz.php') &&
-                !$this->bpltd_is_bot($_SERVER['HTTP_USER_AGENT']);
+            return $post && !$this->bpltd_is_bot($_SERVER['HTTP_USER_AGENT']);
         }
 
         public function bpltd_is_bot($sistema){
